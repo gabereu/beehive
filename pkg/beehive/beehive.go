@@ -15,17 +15,17 @@ func NewHive() *Hive {
 	return &Hive{deps}
 }
 
-func (c *Hive) register(t reflect.Type, bee beeData) error {
+func (h *Hive) register(t reflect.Type, bee beeData) error {
 
 	err := bee.validate()
 	if err != nil {
 		return err
 	}
 
-	bees, ok := c.deps[t]
+	bees, ok := h.deps[t]
 	if !ok {
 		bees = map[Name]*beeData{}
-		c.deps[t] = bees
+		h.deps[t] = bees
 	} else {
 		_, ok = bees[bee.name]
 		if ok {
@@ -38,7 +38,7 @@ func (c *Hive) register(t reflect.Type, bee beeData) error {
 	return nil
 }
 
-func (c *Hive) Register(bee any) error {
+func (h *Hive) Register(bee any) error {
 	beeType := reflect.TypeOf(bee)
 
 	data := beeData{
@@ -46,10 +46,10 @@ func (c *Hive) Register(bee any) error {
 		created: &bee,
 	}
 
-	return c.register(beeType, data)
+	return h.register(beeType, data)
 }
 
-func (c *Hive) RegisterWithName(name Name, bee any) error {
+func (h *Hive) RegisterWithName(name Name, bee any) error {
 	beeType := reflect.TypeOf(bee)
 
 	data := beeData{
@@ -57,14 +57,14 @@ func (c *Hive) RegisterWithName(name Name, bee any) error {
 		created: &bee,
 	}
 
-	return c.register(beeType, data)
+	return h.register(beeType, data)
 }
 
-func (c *Hive) RegisterFunc(creation any) error {
-	return c.RegisterFuncWithName(nil, creation)
+func (h *Hive) RegisterFunc(creation any) error {
+	return h.RegisterFuncWithName(nil, creation)
 }
 
-func (c *Hive) RegisterFuncWithName(name Name, creation any) error {
+func (h *Hive) RegisterFuncWithName(name Name, creation any) error {
 
 	creationType := reflect.TypeOf(creation)
 
@@ -96,7 +96,7 @@ func (c *Hive) RegisterFuncWithName(name Name, creation any) error {
 		creation: creation,
 	}
 
-	return c.register(beeType, bee)
+	return h.register(beeType, bee)
 }
 
 func Get[T any](hive *Hive) (T, error) {
@@ -111,11 +111,11 @@ func GetByName[T any](hive *Hive, name Name) (T, error) {
 	return value, err
 }
 
-func (c *Hive) Get(ptrToBee any) error {
-	return c.GetByName(nil, ptrToBee)
+func (h *Hive) Get(ptrToBee any) error {
+	return h.GetByName(nil, ptrToBee)
 }
 
-func (c *Hive) GetByName(name Name, ptrToValue any) error {
+func (h *Hive) GetByName(name Name, ptrToValue any) error {
 
 	id := beeId{
 		name:  name,
@@ -123,23 +123,23 @@ func (c *Hive) GetByName(name Name, ptrToValue any) error {
 	}
 
 	visited := []beeId{id}
-	content, err := c.get(id, visited)
+	content, err := h.get(id, visited)
 	if err != nil {
 		return err
 	}
 
-	resource := c.deps[id.type_][id.name]
+	resource := h.deps[id.type_][id.name]
 	resource.created = &content
 	setValues(resource.created, ptrToValue)
 
 	return nil
 }
 
-func (c *Hive) get(id beeId, visited []beeId) (any, error) {
+func (h *Hive) get(id beeId, visited []beeId) (any, error) {
 
 	var empty any
 
-	bees, ok := c.deps[id.type_]
+	bees, ok := h.deps[id.type_]
 	if !ok {
 		return empty, fmt.Errorf("bee %s not found", id)
 	}
@@ -158,13 +158,13 @@ func (c *Hive) get(id beeId, visited []beeId) (any, error) {
 	for i, depId := range bee.deps {
 		for _, v := range visited {
 			if v == depId {
-				return nil, fmt.Errorf("dependecy cycle found %v <-> %v | route: %s", depId, id, c.printCycle(visited))
+				return nil, fmt.Errorf("dependecy cycle found %v <-> %v | route: %s", depId, id, h.printCycle(visited))
 			}
 		}
 
 		visited = append(visited, depId)
 
-		dep, err := c.get(depId, visited)
+		dep, err := h.get(depId, visited)
 		if err != nil {
 			return nil, err
 		}
@@ -190,7 +190,7 @@ func (c *Hive) get(id beeId, visited []beeId) (any, error) {
 	return result, nil
 }
 
-func (c *Hive) printCycle(cycle []beeId) string {
+func (h *Hive) printCycle(cycle []beeId) string {
 
 	var sb strings.Builder
 	sb.WriteString(fmt.Sprintf("%v", cycle[0]))
