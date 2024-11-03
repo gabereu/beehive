@@ -286,3 +286,49 @@ func TestFunctionCallErrors(t *testing.T) {
 		assert.Equal(t, "error in creation func for bee 'string': some thing happen", err.Error())
 	})
 }
+
+type TestStruct struct {
+	S0 string
+	S1 string `bee:""`
+	S2 string `bee:"value"`
+}
+
+func TestFillStruct(t *testing.T) {
+
+	t.Run("Success", func(t *testing.T) {
+		hive := beehive.NewHive()
+		hive.Register("val 1")
+		hive.RegisterWithName("value", "val 2")
+
+		s := &TestStruct{}
+
+		err := hive.FillStruct(s)
+
+		assert.Nil(t, err)
+		assert.Equal(t, "", s.S0)
+		assert.Equal(t, "val 1", s.S1)
+		assert.Equal(t, "val 2", s.S2)
+	})
+
+	t.Run("Errors", func(t *testing.T) {
+		hive := beehive.NewHive()
+		hive.Register(123)
+
+		ts := TestStruct{}
+		s := "not a struct pointer"
+
+		err := hive.FillStruct(&ts)
+		err1 := hive.FillStruct(ts)
+		err2 := hive.FillStruct(&s)
+		err3 := hive.FillStruct(s)
+		err4 := hive.FillStruct(&struct {
+			id int `bee:""`
+		}{})
+
+		assert.Equal(t, "bee 'string' not found", err.Error())
+		assert.Equal(t, "argument must be a pointer not a struct", err1.Error())
+		assert.Equal(t, "argument must be a pointer of struct not a pointer of not a struct pointer", err2.Error())
+		assert.Equal(t, "argument must be a pointer not a string", err3.Error())
+		assert.Equal(t, `field {id testgo/pkg/beehive_test int bee:"" 0 [0] false} can not be setted`, err4.Error())
+	})
+}

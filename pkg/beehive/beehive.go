@@ -135,6 +135,50 @@ func (h *Hive) GetByName(name Name, ptrToValue any) error {
 	return nil
 }
 
+func (h *Hive) FillStruct(ptrToStruct any) error {
+	ptrValue := reflect.ValueOf(ptrToStruct)
+	if ptrValue.Kind() != reflect.Pointer {
+		return fmt.Errorf("argument must be a pointer not a %s", ptrValue.Kind())
+	}
+
+	structValue := ptrValue.Elem()
+	structType := structValue.Type()
+	if structValue.Kind() != reflect.Struct {
+		return fmt.Errorf("argument must be a pointer of struct not a pointer of %s", structValue)
+	}
+
+	for i := 0; i < structValue.NumField(); i++ {
+		field := structType.Field(i)
+		fieldValue := structValue.Field(i)
+		tag, ok := field.Tag.Lookup("bee")
+		if ok {
+			var name any = tag
+			if tag == "" {
+				name = nil
+			}
+
+			id := beeId{
+				type_: fieldValue.Type(),
+				name:  name,
+			}
+
+			visited := []beeId{id}
+			content, err := h.get(id, visited)
+			if err != nil {
+				return err
+			}
+
+			if !fieldValue.CanSet() {
+				return fmt.Errorf("field %v can not be setted", field)
+			}
+
+			fieldValue.Set(reflect.ValueOf(content))
+		}
+	}
+
+	return nil
+}
+
 func (h *Hive) get(id beeId, visited []beeId) (any, error) {
 
 	var empty any
