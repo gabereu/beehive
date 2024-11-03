@@ -327,8 +327,64 @@ func TestFillStruct(t *testing.T) {
 
 		assert.Equal(t, "bee 'string' not found", err.Error())
 		assert.Equal(t, "argument must be a pointer not a struct", err1.Error())
-		assert.Equal(t, "argument must be a pointer of struct not a pointer of not a struct pointer", err2.Error())
+		assert.Equal(t, "argument must be a pointer of struct not a pointer of string", err2.Error())
 		assert.Equal(t, "argument must be a pointer not a string", err3.Error())
 		assert.Equal(t, `field {id github.com/gabereu/beehive_test int bee:"" 0 [0] false} can not be setted`, err4.Error())
+	})
+}
+
+func TestRegisterStruct(t *testing.T) {
+	t.Run("Success_with_struct_value", func(t *testing.T) {
+		hive := beehive.NewHive()
+		hive.Register("val 1")
+		hive.RegisterWithName("value", "val 2")
+
+		err1 := hive.RegisterStruct(TestStruct{})
+
+		instance, err2 := beehive.Get[TestStruct](hive)
+
+		assert.Nil(t, err1)
+		assert.Nil(t, err2)
+
+		assert.Equal(t, "", instance.S0)
+		assert.Equal(t, "val 1", instance.S1)
+		assert.Equal(t, "val 2", instance.S2)
+
+	})
+
+	t.Run("Success_with_struct_pointer", func(t *testing.T) {
+		hive := beehive.NewHive()
+		hive.Register("val 1")
+		hive.RegisterWithName("value", "val 2")
+
+		err1 := hive.RegisterStruct(&TestStruct{})
+
+		instance, err2 := beehive.Get[*TestStruct](hive)
+
+		var instance2 *TestStruct
+		err3 := hive.Get(&instance2)
+
+		assert.Nil(t, err1)
+		assert.Nil(t, err2)
+		assert.Nil(t, err3)
+
+		assert.Equal(t, "", instance.S0)
+		assert.Equal(t, "val 1", instance.S1)
+		assert.Equal(t, "val 2", instance.S2)
+
+		assert.Equal(t, "", instance2.S0)
+		assert.Equal(t, "val 1", instance2.S1)
+		assert.Equal(t, "val 2", instance2.S2)
+	})
+
+	t.Run("Error_wrong_type", func(t *testing.T) {
+		hive := beehive.NewHive()
+
+		var nosStruct string
+		err1 := hive.RegisterStruct("not pointer")
+		err2 := hive.RegisterStruct(&nosStruct)
+
+		assert.Equal(t, "argument must be struct or *struct but received string", err1.Error())
+		assert.Equal(t, "argument must be struct or *struct but received *string", err2.Error())
 	})
 }

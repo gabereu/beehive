@@ -99,6 +99,39 @@ func (h *Hive) RegisterFuncWithName(name Name, creation any) error {
 	return h.register(beeType, bee)
 }
 
+func (h *Hive) RegisterStruct(structValue any) error {
+	structReflectValue := reflect.TypeOf(structValue)
+	if structReflectValue.Kind() == reflect.Pointer {
+		structReflectValue = structReflectValue.Elem()
+	}
+
+	if structReflectValue.Kind() != reflect.Struct {
+		return fmt.Errorf("argument must be struct or *struct but received %s", reflect.TypeOf(structValue))
+	}
+
+	deps := Deps{}
+	for i := 0; i < structReflectValue.NumField(); i++ {
+		field := structReflectValue.Field(i)
+		tag, ok := field.Tag.Lookup("bee")
+		if !ok {
+			continue
+		}
+
+		var name any = tag
+		if tag == "" {
+			name = nil
+		}
+
+		deps = append(deps, beeId{type_: field.Type, name: name})
+	}
+
+	realType := reflect.TypeOf(structValue)
+
+	data := beeData{name: nil, deps: deps, creation: realType}
+
+	return h.register(realType, data)
+}
+
 func Get[T any](hive *Hive) (T, error) {
 	var value T
 	err := hive.Get(&value)
@@ -144,7 +177,7 @@ func (h *Hive) FillStruct(ptrToStruct any) error {
 	structValue := ptrValue.Elem()
 	structType := structValue.Type()
 	if structValue.Kind() != reflect.Struct {
-		return fmt.Errorf("argument must be a pointer of struct not a pointer of %s", structValue)
+		return fmt.Errorf("argument must be a pointer of struct not a pointer of %s", structValue.Kind())
 	}
 
 	for i := 0; i < structValue.NumField(); i++ {
@@ -215,6 +248,25 @@ func (h *Hive) get(id beeId, visited []beeId) (any, error) {
 		deps[i] = reflect.ValueOf(dep)
 
 		visited = visited[:len(visited)-1]
+	}
+
+	creationType, ok := bee.creation.(reflect.Type)
+	if ok {
+
+		if creationType.Kind() == reflect.Pointer {
+			pointer := reflect.New(creationType.Elem()).Interface()
+			err := h.FillStruct(pointer)
+			bee.created = &pointer
+			return pointer, err
+		} else {
+			pointer := reflect.New(creationType).Interface()
+			err := h.FillStruct(pointer)
+			value := reflect.ValueOf(pointer).Elem().Interface()
+
+			bee.created = &value
+
+			return value, err
+		}
 	}
 
 	r, err := safeCall(id, bee.creation, deps)

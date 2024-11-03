@@ -36,6 +36,10 @@ func (data beeData) validate() error {
 			return errors.New("bee must has an value or an creation strategy")
 		}
 
+		if _, ok := data.creation.(reflect.Type); ok {
+			return nil
+		}
+
 		err := validateCreationFunc(data)
 		if err != nil {
 			return err
