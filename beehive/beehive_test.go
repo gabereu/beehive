@@ -357,7 +357,7 @@ func TestRegisterStruct(t *testing.T) {
 		hive.Register("val 1")
 		hive.RegisterWithName("value", "val 2")
 
-		err1 := hive.RegisterStruct(&TestStruct{})
+		err1 := beehive.RegisterStruct[*TestStruct](hive)
 
 		instance, err2 := beehive.Get[*TestStruct](hive)
 

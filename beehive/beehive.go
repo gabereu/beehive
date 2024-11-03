@@ -99,6 +99,11 @@ func (h *Hive) RegisterFuncWithName(name Name, creation any) error {
 	return h.register(beeType, bee)
 }
 
+func RegisterStruct[T any](hive *Hive) error {
+	var value T
+	return hive.RegisterStruct(value)
+}
+
 func (h *Hive) RegisterStruct(structValue any) error {
 	structReflectValue := reflect.TypeOf(structValue)
 	if structReflectValue.Kind() == reflect.Pointer {
