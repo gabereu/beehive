@@ -3,9 +3,9 @@ package beehive_test
 import (
 	"errors"
 	"fmt"
-	"testgo/pkg/beehive"
 	"testing"
 
+	"github.com/gabereu/beehive"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -329,6 +329,6 @@ func TestFillStruct(t *testing.T) {
 		assert.Equal(t, "argument must be a pointer not a struct", err1.Error())
 		assert.Equal(t, "argument must be a pointer of struct not a pointer of not a struct pointer", err2.Error())
 		assert.Equal(t, "argument must be a pointer not a string", err3.Error())
-		assert.Equal(t, `field {id testgo/pkg/beehive_test int bee:"" 0 [0] false} can not be setted`, err4.Error())
+		assert.Equal(t, `field {id github.com/gabereu/beehive_test int bee:"" 0 [0] false} can not be setted`, err4.Error())
 	})
 }

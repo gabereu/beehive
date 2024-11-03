@@ -1,4 +1,4 @@
-module testgo
+module github.com/gabereu
 
 go 1.22.4
 
