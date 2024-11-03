@@ -1,4 +1,4 @@
-module github.com/gabereu
+module github.com/gabereu/beehive
 
 go 1.22.4
 

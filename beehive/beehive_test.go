@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/gabereu/beehive"
+	"github.com/gabereu/beehive/beehive"
 	"github.com/stretchr/testify/assert"
 )
 
